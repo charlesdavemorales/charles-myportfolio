@@ -1,270 +1,386 @@
-/*---------------------------------------------------------------------------------
-/*
-/* Main JS
-/*
------------------------------------------------------------------------------------*/  
+/* ===================================================================
+ * Monica 1.0.0 - Main JS
+ *
+ * ------------------------------------------------------------------- */
 
-(function($) {
+(function(html) {
 
-	"use strict";
+    'use strict';
 
-	/*---------------------------------------------------- */
-	/* Preloader
-	------------------------------------------------------ */ 
-   $(window).load(function() {
+    const cfg = {
 
-      // will first fade out the loading animation 
-    	$("#loader").fadeOut("slow", function(){
+        // MailChimp URL
+        mailChimpURL : 'https://facebook.us1.list-manage.com/subscribe/post?u=1abf75f6981256963a47d197a&amp;id=37c6d8f4d6' 
 
-        // will fade out the whole DIV that covers the website.
-        $("#preloader").delay(300).fadeOut("slow");
-
-      });       
-
-  	})
+    };
 
 
-  	/*----------------------------------------------------*/
-  	/* Flexslider
-  	/*----------------------------------------------------*/
-  	$(window).load(function() {
+   /* preloader
+    * -------------------------------------------------- */
+    const ssPreloader = function() {
 
-	  	$('#hero-slider').flexslider({
-	   	namespace: "flex-",
-	      controlsContainer: ".hero-container",
-	      animation: 'fade',
-	      controlNav: true,
-	      directionNav: false,
-	      smoothHeight: true,
-	      slideshowSpeed: 7000,
-	      animationSpeed: 600,
-	      randomize: false,
-	      before: function(slider){
-			   $(slider).find(".animated").each(function(){
-			   	$(this).removeAttr("class");
-			  	});			  	
-			},
-			start: function(slider){
-			   $(slider).find(".flex-active-slide")
-			           	.find("h1").addClass("animated fadeInDown show")
-			           	.next().addClass("animated fadeInUp show");
-			           		
-			   $(window).trigger('resize');		  			 
-			},
-			after: function(slider){
-			 	$(slider).find(".flex-active-slide")
-			           	.find("h1").addClass("animated fadeInDown show")
-			           	.next().addClass("animated fadeInUp show");			  
-			}
-	   });
+        const siteBody = document.querySelector('body');
+        const preloader = document.querySelector('#preloader');
+        if (!preloader) return;
 
-	   $('#testimonial-slider').flexslider({
-	   	namespace: "flex-",
-	      controlsContainer: "",
-	      animation: 'slide',
-	      controlNav: true,
-	      directionNav: false,
-	      smoothHeight: true,
-	      slideshowSpeed: 7000,
-	      animationSpeed: 600,
-	      randomize: false,
-	   });
+        html.classList.add('ss-preload');
+        
+        window.addEventListener('load', function() {
+            html.classList.remove('ss-preload');
+            html.classList.add('ss-loaded');
+            
+            preloader.addEventListener('transitionend', function afterTransition(e) {
+                if (e.target.matches('#preloader'))  {
+                    siteBody.classList.add('ss-show');
+                    e.target.style.display = 'none';
+                    preloader.removeEventListener(e.type, afterTransition);
+                }
+            });
+        });
 
-   });
+    }; // end ssPreloader
 
 
-   /*----------------------------------------------------*/
-	/* Adjust Primary Navigation Background Opacity
-	------------------------------------------------------*/
-   $(window).on('scroll', function() {
+   /* mobile menu
+    * ---------------------------------------------------- */ 
+    const ssMobileMenu = function() {
 
-		var h = $('header').height();
-		var y = $(window).scrollTop();
-      var header = $('#main-header');
+        const toggleButton = document.querySelector('.s-header__menu-toggle');
+        const mainNavWrap = document.querySelector('.s-header__nav');
+        const siteBody = document.querySelector('body');
 
-	   if ((y > h + 30 ) && ($(window).outerWidth() > 768 ) ) {
-	      header.addClass('opaque');	      
-	   }
-      else {
-         if (y < h + 30) {
-            header.removeClass('opaque');
-         }
-         else {
-            header.addClass('opaque');
-         }
-      }
+        if (!(toggleButton && mainNavWrap)) return;
 
-	});
+        toggleButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            toggleButton.classList.toggle('is-clicked');
+            siteBody.classList.toggle('menu-is-open');
+        });
 
+        mainNavWrap.querySelectorAll('.s-header__nav a').forEach(function(link) {
 
-   /*----------------------------------------------------*/
-  	/* Highlight the current section in the navigation bar
-  	------------------------------------------------------*/
-	var sections = $("section"),
-	navigation_links = $("#nav-wrap a");	
+            link.addEventListener("click", function(event) {
 
-	sections.waypoint( {
+                // at 900px and below
+                if (window.matchMedia('(max-width: 900px)').matches) {
+                    toggleButton.classList.toggle('is-clicked');
+                    siteBody.classList.toggle('menu-is-open');
+                }
+            });
+        });
 
-       handler: function(direction) {
+        window.addEventListener('resize', function() {
 
-		   var active_section;
+            // above 900px
+            if (window.matchMedia('(min-width: 901px)').matches) {
+                if (siteBody.classList.contains('menu-is-open')) siteBody.classList.remove('menu-is-open');
+                if (toggleButton.classList.contains('is-clicked')) toggleButton.classList.remove('is-clicked');
+            }
+        });
 
-			active_section = $('section#' + this.element.id);
-
-			if (direction === "up") active_section = active_section.prev();
-
-			var active_link = $('#nav-wrap a[href="#' + active_section.attr("id") + '"]');			
-
-         navigation_links.parent().removeClass("current");
-			active_link.parent().addClass("current");
-
-		}, 
-
-		offset: '25%'
-
-	});
+    }; // end ssMobileMenu
 
 
-   /*----------------------------------------------------*/
-  	/* FitText Settings
-  	------------------------------------------------------ */
-  	setTimeout(function() {
+   /* swiper
+    * ------------------------------------------------------ */ 
+    const ssSwiper = function() {
 
-   	$('#hero-slider h1').fitText(1, { minFontSize: '30px', maxFontSize: '49px' });
+        const homeSliderSwiper = new Swiper('.home-slider', {
 
-  	}, 100);
+            slidesPerView: 1,
+            pagination: {
+                el: '.swiper-pagination',
+                clickable: true,
+            },
+            breakpoints: {
+                // when window width is > 400px
+                401: {
+                    slidesPerView: 1,
+                    spaceBetween: 20
+                },
+                // when window width is > 800px
+                801: {
+                    slidesPerView: 2,
+                    spaceBetween: 40
+                },
+                // when window width is > 1330px
+                1331: {
+                    slidesPerView: 3,
+                    spaceBetween: 48
+                },
+                // when window width is > 1773px
+                1774: {
+                    slidesPerView: 4,
+                    spaceBetween: 48
+                }
+            }
+        });
+
+        const pageSliderSwiper = new Swiper('.page-slider', {
+
+            slidesPerView: 1,
+            pagination: {
+                el: '.swiper-pagination',
+                clickable: true,
+            },
+            breakpoints: {
+                // when window width is > 400px
+                401: {
+                    slidesPerView: 1,
+                    spaceBetween: 20
+                },
+                // when window width is > 800px
+                801: {
+                    slidesPerView: 2,
+                    spaceBetween: 40
+                },
+                // when window width is > 1240px
+                1241: {
+                    slidesPerView: 3,
+                    spaceBetween: 48
+                }
+            }
+        });
+
+    }; // end ssSwiper
 
 
-  	/*-----------------------------------------------------*/
-  	/* Mobile Menu
-   ------------------------------------------------------ */  
-   var menu_icon = $("<span class='menu-icon'>Menu</span>");
-  	var toggle_button = $("<a>", {                         
-                        id: "toggle-btn", 
-                        html : "",
-                        title: "Menu",
-                        href : "#" } 
-                        );
-  	var nav_wrap = $('nav#nav-wrap')
-  	var nav = $("ul#nav");  
-   
-   /* if JS is enabled, remove the two a.mobile-btns 
-  	and dynamically prepend a.toggle-btn to #nav-wrap */
-  	nav_wrap.find('a.mobile-btn').remove(); 
-  	toggle_button.append(menu_icon); 
-   nav_wrap.prepend(toggle_button); 
+   /* mailchimp form
+    * ---------------------------------------------------- */ 
+    const ssMailChimpForm = function() {
 
-  	toggle_button.on("click", function(e) {
-   	e.preventDefault();
-    	nav.slideToggle("fast");     
-  	});
+        const mcForm = document.querySelector('#mc-form');
 
-  	if (toggle_button.is(':visible')) nav.addClass('mobile');
-  	$(window).resize(function() {
-   	if (toggle_button.is(':visible')) nav.addClass('mobile');
-    	else nav.removeClass('mobile');
-  	});
+        if (!mcForm) return;
 
-  	$('ul#nav li a').on("click", function() {      
-   	if (nav.hasClass('mobile')) nav.fadeOut('fast');      
-  	});
+        // Add novalidate attribute
+        mcForm.setAttribute('novalidate', true);
+
+        // Field validation
+        function hasError(field) {
+
+            // Don't validate submits, buttons, file and reset inputs, and disabled fields
+            if (field.disabled || field.type === 'file' || field.type === 'reset' || field.type === 'submit' || field.type === 'button') return;
+
+            // Get validity
+            let validity = field.validity;
+
+            // If valid, return null
+            if (validity.valid) return;
+
+            // If field is required and empty
+            if (validity.valueMissing) return 'Please enter an email address.';
+
+            // If not the right type
+            if (validity.typeMismatch) {
+                if (field.type === 'email') return 'Please enter a valid email address.';
+            }
+
+            // If pattern doesn't match
+            if (validity.patternMismatch) {
+
+                // If pattern info is included, return custom error
+                if (field.hasAttribute('title')) return field.getAttribute('title');
+
+                // Otherwise, generic error
+                return 'Please match the requested format.';
+            }
+
+            // If all else fails, return a generic catchall error
+            return 'The value you entered for this field is invalid.';
+
+        };
+
+        // Show error message
+        function showError(field, error) {
+
+            // Get field id or name
+            let id = field.id || field.name;
+            if (!id) return;
+
+            let errorMessage = field.form.querySelector('.mc-status');
+
+            // Update error message
+            errorMessage.classList.remove('success-message');
+            errorMessage.classList.add('error-message');
+            errorMessage.innerHTML = error;
+
+        };
+
+        // Display form status (callback function for JSONP)
+        window.displayMailChimpStatus = function (data) {
+
+            // Make sure the data is in the right format and that there's a status container
+            if (!data.result || !data.msg || !mcStatus ) return;
+
+            // Update our status message
+            mcStatus.innerHTML = data.msg;
+
+            // If error, add error class
+            if (data.result === 'error') {
+                mcStatus.classList.remove('success-message');
+                mcStatus.classList.add('error-message');
+                return;
+            }
+
+            // Otherwise, add success class
+            mcStatus.classList.remove('error-message');
+            mcStatus.classList.add('success-message');
+        };
+
+        // Submit the form 
+        function submitMailChimpForm(form) {
+
+            let url = cfg.mailChimpURL;
+            let emailField = form.querySelector('#mce-EMAIL');
+            let serialize = '&' + encodeURIComponent(emailField.name) + '=' + encodeURIComponent(emailField.value);
+
+            if (url == '') return;
+
+            url = url.replace('/post?u=', '/post-json?u=');
+            url += serialize + '&c=displayMailChimpStatus';
+
+            // Create script with url and callback (if specified)
+            var ref = window.document.getElementsByTagName( 'script' )[ 0 ];
+            var script = window.document.createElement( 'script' );
+            script.src = url;
+
+            // Create global variable for the status container
+            window.mcStatus = form.querySelector('.mc-status');
+            window.mcStatus.classList.remove('error-message', 'success-message')
+            window.mcStatus.innerText = 'Submitting...';
+
+            // Insert script tag into the DOM
+            ref.parentNode.insertBefore( script, ref );
+
+            // After the script is loaded (and executed), remove it
+            script.onload = function () {
+                this.remove();
+            };
+
+        };
+
+        // Check email field on submit
+        mcForm.addEventListener('submit', function (event) {
+
+            event.preventDefault();
+
+            let emailField = event.target.querySelector('#mce-EMAIL');
+            let error = hasError(emailField);
+
+            if (error) {
+                showError(emailField, error);
+                emailField.focus();
+                return;
+            }
+
+            submitMailChimpForm(this);
+
+        }, false);
+
+    }; // end ssMailChimpForm
 
 
-  	/*----------------------------------------------------*/
-  	/* Smooth Scrolling
-  	------------------------------------------------------ */
-  	$('.smoothscroll').on('click', function (e) {
-	 	
-	 	e.preventDefault();
+   /* alert boxes
+    * ------------------------------------------------------ */
+    const ssAlertBoxes = function() {
 
-   	var target = this.hash,
-    	$target = $(target);
-
-    	$('html, body').stop().animate({
-       	'scrollTop': $target.offset().top
-      }, 800, 'swing', function () {
-      	window.location.hash = target;
-      });
-
-  	});  
+        const boxes = document.querySelectorAll('.alert-box');
   
+        boxes.forEach(function(box){
 
-   /*----------------------------------------------------*/
-	/*	Modal Popup
-	------------------------------------------------------*/
-    $('.item-wrap a').magnificPopup({
+            box.addEventListener('click', function(e) {
+                if (e.target.matches('.alert-box__close')) {
+                    e.stopPropagation();
+                    e.target.parentElement.classList.add('hideit');
 
-       type:'inline',
-       fixedContentPos: false,
-       removalDelay: 300,
-       showCloseBtn: false,
-       mainClass: 'mfp-fade'
+                    setTimeout(function() {
+                        box.style.display = 'none';
+                    }, 500)
+                }
+            });
+        })
 
-    });
-
-    $(document).on('click', '.popup-modal-dismiss', function (e) {
-    		e.preventDefault();
-    		$.magnificPopup.close();
-    });
+    }; // end ssAlertBoxes
 
 
-   /*----------------------------------------------------*/
-	/*  Placeholder Plugin Settings
-	------------------------------------------------------ */  	 
-	$('input, textarea').placeholder()  
+    /* Back to Top
+    * ------------------------------------------------------ */
+    const ssBackToTop = function() {
 
-   
-	/*----------------------------------------------------*/
-	/*	contact form
-	------------------------------------------------------*/
+        const pxShow = 900;
+        const goTopButton = document.querySelector(".ss-go-top");
 
-	/* local validation */
-	$('#contactForm').validate({
+        if (!goTopButton) return;
 
-		/* submit via ajax */
-		submitHandler: function(form) {
+        // Show or hide the button
+        if (window.scrollY >= pxShow) goTopButton.classList.add("link-is-visible");
 
-			var sLoader = $('#submit-loader');
+        window.addEventListener('scroll', function() {
+            if (window.scrollY >= pxShow) {
+                if(!goTopButton.classList.contains('link-is-visible')) goTopButton.classList.add("link-is-visible")
+            } else {
+                goTopButton.classList.remove("link-is-visible")
+            }
+        });
 
-			$.ajax({      	
+    }; // end ssBackToTop
 
-		      type: "POST",
-		      url: "inc/sendEmail.php",
-		      data: $(form).serialize(),
-		      beforeSend: function() { 
 
-		      	sLoader.fadeIn(); 
+   /* smoothscroll
+    * ------------------------------------------------------ */
+    const ssMoveTo = function() {
 
-		      },
-		      success: function(msg) {
+        const easeFunctions = {
+            easeInQuad: function (t, b, c, d) {
+                t /= d;
+                return c * t * t + b;
+            },
+            easeOutQuad: function (t, b, c, d) {
+                t /= d;
+                return -c * t* (t - 2) + b;
+            },
+            easeInOutQuad: function (t, b, c, d) {
+                t /= d/2;
+                if (t < 1) return c/2*t*t + b;
+                t--;
+                return -c/2 * (t*(t-2) - 1) + b;
+            },
+            easeInOutCubic: function (t, b, c, d) {
+                t /= d/2;
+                if (t < 1) return c/2*t*t*t + b;
+                t -= 2;
+                return c/2*(t*t*t + 2) + b;
+            }
+        }
 
-	            // Message was sent
-	            if (msg == 'OK') {
-	            	sLoader.fadeOut(); 
-	               $('#message-warning').hide();
-	               $('#contactForm').fadeOut();
-	               $('#message-success').fadeIn();   
-	            }
-	            // There was an error
-	            else {
-	            	sLoader.fadeOut(); 
-	               $('#message-warning').html(msg);
-		            $('#message-warning').fadeIn();
-	            }
+        const triggers = document.querySelectorAll('.smoothscroll');
+        
+        const moveTo = new MoveTo({
+            tolerance: 0,
+            duration: 1200,
+            easing: 'easeInOutCubic',
+            container: window
+        }, easeFunctions);
 
-		      },
-		      error: function() {
+        triggers.forEach(function(trigger) {
+            moveTo.registerTrigger(trigger);
+        });
 
-		      	sLoader.fadeOut(); 
-		      	$('#message-warning').html("Something went wrong. Please try again.");
-		         $('#message-warning').fadeIn();
+    }; // end ssMoveTo
 
-		      }
 
-	      });     		
-  		}
+   /* Initialize
+    * ------------------------------------------------------ */
+    (function ssInit() {
 
-	});
-	
+        ssPreloader();
+        ssMobileMenu();
+        ssSwiper();
+        ssMailChimpForm();
+        ssAlertBoxes();
+        ssMoveTo();
 
-})(jQuery);
+    })();
+
+})(document.documentElement);
